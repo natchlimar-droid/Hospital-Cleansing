@@ -63,3 +63,4 @@ An in-browser, high-performance Data Cleansing & Data Quality profiling applicat
 
 ## 📜 License
 Released under the [MIT License](LICENSE).
+
