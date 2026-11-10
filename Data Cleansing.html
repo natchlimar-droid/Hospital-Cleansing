@@ -1,0 +1,2669 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hospital Cleansing - Smart Clean, PDPA Safe & Data Quality Tool</title>
+
+  <!-- External Libraries -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/tesseract.js@5.0.5/dist/tesseract.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <style>
+    /* ==========================================================
+   DESIGN TOKENS - Hospital Modern Clean & Responsive
+========================================================== */
+    :root {
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --surface-secondary: #f1f5f9;
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+      --accent: #4f46e5;
+      --accent-light: #818cf8;
+      --accent-bg: #eef2ff;
+      --danger: #ef4444;
+      --warn: #f59e0b;
+      --success: #10b981;
+      --teal: #0d9488;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --sidebar-w: 250px;
+      --header-h: 48px;
+      --row-h: 34px;
+      --font: 'Sarabun', system-ui, -apple-system, sans-serif;
+      --radius: 12px;
+      --radius-sm: 8px;
+    }
+
+    body.dark {
+      --bg: #0b0f19;
+      --surface: #131b2e;
+      --surface-secondary: #1e293b;
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --border: #283548;
+      --accent-bg: #1e1b4b;
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+      font-size: 13px;
+    }
+
+    /* Sidebar */
+    #sidebar {
+      width: var(--sidebar-w);
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      z-index: 100;
+      flex-shrink: 0;
+      overflow-y: auto;
+    }
+
+    #sidebar-logo {
+      padding: 14px 18px;
+      font-weight: 700;
+      font-size: 15px;
+      color: var(--accent);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .sidebar-section {
+      padding: 10px 14px 4px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--text-muted);
+    }
+
+    .sidebar-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: calc(100% - 12px);
+      margin: 2px 6px;
+      padding: 7px 10px;
+      border: none;
+      background: transparent;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-size: 12px;
+      color: var(--text);
+      text-align: left;
+      transition: all 0.15s ease;
+      font-family: var(--font);
+    }
+
+    .sidebar-btn:hover {
+      background: var(--surface-secondary);
+      color: var(--accent);
+    }
+
+    .sidebar-btn:active {
+      transform: scale(0.98);
+    }
+
+    .sidebar-btn.highlight {
+      background: var(--accent-bg);
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .sidebar-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 6px 12px;
+    }
+
+    /* Main Area */
+    #main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      overflow: hidden;
+    }
+
+    /* Banner for Recovery / Notice */
+    #recovery-banner {
+      background: #fef3c7;
+      color: #92400e;
+      padding: 8px 16px;
+      font-size: 12px;
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #fde68a;
+      z-index: 10;
+    }
+
+    body.dark #recovery-banner {
+      background: #451a03;
+      color: #fde68a;
+      border-bottom: 1px solid #78350f;
+    }
+
+    /* Sheet Tabs */
+    #sheet-tab-container {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 12px;
+      flex-shrink: 0;
+    }
+
+    #sheet-tab-bar {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      scrollbar-width: thin;
+      padding: 6px 0;
+    }
+
+    .sheet-tab {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px;
+      background: transparent;
+      border: none;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-muted);
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+
+    .sheet-tab:hover {
+      background: var(--surface-secondary);
+      color: var(--text);
+    }
+
+    .sheet-tab.active {
+      background: var(--accent);
+      color: white;
+    }
+
+    .sheet-tab-close {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-size: 11px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0.6;
+    }
+
+    .sheet-tab-close:hover {
+      background: rgba(0, 0, 0, 0.15);
+      opacity: 1;
+    }
+
+    .sheet-tab-add {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      margin-left: 4px;
+      border: none;
+      background: transparent;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 15px;
+      color: var(--accent);
+    }
+
+    .sheet-tab-add:hover {
+      background: var(--surface-secondary);
+    }
+
+    /* Toolbar */
+    #toolbar {
+      height: var(--header-h);
+      background: var(--surface);
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+      gap: 6px;
+      flex-shrink: 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .tb-btn {
+      padding: 6px 12px;
+      border: none;
+      background: var(--surface-secondary);
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text);
+      transition: all 0.15s;
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .tb-btn:hover {
+      background: var(--border);
+    }
+
+    .tb-btn.purple {
+      background: var(--accent);
+      color: white;
+    }
+
+    .tb-btn.purple:hover {
+      opacity: 0.92;
+    }
+
+    .tb-btn.accent {
+      background: var(--accent-light);
+      color: white;
+    }
+
+    .tb-btn.success {
+      background: var(--success);
+      color: white;
+    }
+
+    .tb-btn.danger {
+      background: var(--danger);
+      color: white;
+    }
+
+    .tb-btn.warn {
+      background: var(--warn);
+      color: white;
+    }
+
+    .tb-btn.teal {
+      background: var(--teal);
+      color: white;
+    }
+
+    #toolbar-title {
+      flex: 1;
+      font-size: 12px;
+      color: var(--text-muted);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      margin-left: 8px;
+    }
+
+    /* Dashboard Panel */
+    #dashboard-panel {
+      position: fixed;
+      right: 0;
+      top: 0;
+      width: 440px;
+      height: 100vh;
+      background: var(--surface);
+      box-shadow: -4px 0 20px rgba(0, 0, 0, 0.12);
+      z-index: 200;
+      transform: translateX(100%);
+      transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      flex-direction: column;
+      border-left: 1px solid var(--border);
+    }
+
+    #dashboard-panel.open {
+      transform: translateX(0);
+    }
+
+    .dashboard-header {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .dashboard-close {
+      width: 28px;
+      height: 28px;
+      border: none;
+      background: var(--surface-secondary);
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .dashboard-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+    }
+
+    /* Table Container & Virtual Scrolling */
+    #table-wrap {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: var(--surface);
+      margin: 8px;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border);
+    }
+
+    #tbl-head-wrap {
+      overflow-x: auto;
+      background: var(--surface-secondary);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    #tbl-head {
+      display: flex;
+      min-width: max-content;
+    }
+
+    .th {
+      flex-shrink: 0;
+      padding: 0 10px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      font-weight: 600;
+      font-size: 11px;
+      color: var(--text-muted);
+      border-right: 1px solid var(--border);
+      gap: 5px;
+      user-select: none;
+    }
+
+    .th.rn {
+      min-width: 50px;
+      width: 50px;
+      justify-content: center;
+    }
+
+    .th-pii {
+      color: #dc2626 !important;
+      font-weight: 700;
+    }
+
+    #tbl-body-wrap {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: auto;
+    }
+
+    #tbl-rows {
+      position: relative;
+      min-width: max-content;
+    }
+
+    .tbl-row {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .tbl-row:hover {
+      background: rgba(79, 70, 229, 0.04);
+    }
+
+    .td {
+      flex-shrink: 0;
+      padding: 0 10px;
+      height: var(--row-h);
+      display: flex;
+      align-items: center;
+      border-right: 1px solid var(--border);
+      font-size: 12px;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      cursor: cell;
+    }
+
+    .td.rn {
+      min-width: 50px;
+      width: 50px;
+      justify-content: center;
+      color: var(--text-muted);
+      cursor: default;
+      background: var(--surface-secondary);
+    }
+
+    .td-pii-cell {
+      font-family: monospace;
+      letter-spacing: 0.5px;
+    }
+
+    /* Modal System */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: fadeIn 0.15s ease;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
+    }
+
+    .modal {
+      background: var(--surface);
+      border-radius: var(--radius);
+      width: min(860px, 94vw);
+      max-height: 88vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: var(--shadow-lg);
+      border: 1px solid var(--border);
+    }
+
+    .modal-head {
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .modal-close {
+      background: transparent;
+      border: none;
+      font-size: 16px;
+      cursor: pointer;
+      color: var(--text-muted);
+    }
+
+    .modal-body {
+      padding: 18px 20px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .modal-footer {
+      padding: 12px 20px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+
+    /* Stats & Cards */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .stat-card {
+      background: var(--surface-secondary);
+      border-radius: var(--radius-sm);
+      padding: 12px 8px;
+      text-align: center;
+      border: 1px solid var(--border);
+    }
+
+    .stat-value {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .stat-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* Tool Cards & Badges */
+    .card-box {
+      background: var(--surface-secondary);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      margin-bottom: 12px;
+      border: 1px solid var(--border);
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 7px;
+      border-radius: 12px;
+      font-size: 10px;
+      font-weight: 600;
+    }
+
+    .badge-pdpa {
+      background: #fee2e2;
+      color: #b91c1c;
+    }
+
+    .badge-clean {
+      background: #e0e7ff;
+      color: #4338ca;
+    }
+
+    .badge-success {
+      background: #d1fae5;
+      color: #047857;
+    }
+
+    /* Form Inputs & Controls */
+    .form-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .form-input,
+    .form-select,
+    .form-textarea {
+      width: 100%;
+      padding: 7px 12px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 12px;
+    }
+
+    .form-input:focus,
+    .form-select:focus,
+    .form-textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .btn {
+      padding: 7px 16px;
+      border: none;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      transition: all 0.15s;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      opacity: 0.92;
+    }
+
+    .btn-secondary {
+      background: var(--surface-secondary);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .btn-danger {
+      background: var(--danger);
+      color: white;
+    }
+
+    .btn-success {
+      background: var(--success);
+      color: white;
+    }
+
+    /* Cleansing Modal Specifics */
+    .cleansing-options {
+      background: var(--surface-secondary);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      margin-bottom: 12px;
+      display: flex;
+      gap: 16px;
+    }
+
+    .rowcol-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .clean-section {
+      background: var(--surface-secondary);
+      border-radius: var(--radius-sm);
+      padding: 12px;
+      border: 1px solid var(--border);
+    }
+
+    .clean-section h4 {
+      margin-bottom: 8px;
+      font-size: 12px;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .clean-btn {
+      width: 100%;
+      padding: 7px;
+      margin-bottom: 6px;
+      border: none;
+      border-radius: 18px;
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 600;
+      transition: all 0.15s;
+    }
+
+    .clean-btn-red {
+      background: var(--danger);
+      color: white;
+    }
+
+    .clean-btn-purple {
+      background: var(--accent);
+      color: white;
+    }
+
+    .clean-btn-orange {
+      background: var(--warn);
+      color: white;
+    }
+
+    .clean-btn-teal {
+      background: var(--teal);
+      color: white;
+    }
+
+    .clean-btn:hover {
+      opacity: 0.9;
+      transform: translateY(-1px);
+    }
+
+    .threshold-group {
+      margin-top: 10px;
+      border-top: 1px solid var(--border);
+      padding-top: 10px;
+    }
+
+    .filter-group {
+      display: flex;
+      gap: 6px;
+      margin: 6px 0;
+    }
+
+    .col-checklist {
+      max-height: 140px;
+      overflow-y: auto;
+      background: var(--surface);
+      border-radius: var(--radius-sm);
+      padding: 6px;
+      margin: 6px 0;
+      border: 1px solid var(--border);
+    }
+
+    .col-checklist label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 6px;
+      cursor: pointer;
+      font-size: 11px;
+    }
+
+    /* Status Bar & Toast */
+    #statusbar {
+      height: 28px;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 14px;
+      gap: 16px;
+      font-size: 11px;
+      color: var(--text-muted);
+      flex-shrink: 0;
+    }
+
+    #toast-container {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      pointer-events: none;
+    }
+
+    .toast {
+      background: var(--surface);
+      color: var(--text);
+      border-radius: 30px;
+      padding: 8px 16px;
+      font-size: 12px;
+      box-shadow: var(--shadow-md);
+      border-left: 4px solid var(--accent);
+      animation: fadeIn 0.2s;
+      pointer-events: auto;
+    }
+
+    .toast.success {
+      border-left-color: var(--success);
+    }
+
+    .toast.warn {
+      border-left-color: var(--warn);
+    }
+
+    .toast.error {
+      border-left-color: var(--danger);
+    }
+
+    /* Drop Zone & Loading */
+    .drop-zone {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .drop-zone:hover {
+      border-color: var(--accent);
+      background: var(--accent-bg);
+    }
+
+    #loading-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(4px);
+      z-index: 9000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 12px;
+      color: white;
+    }
+
+    #loading-overlay.show {
+      display: flex;
+    }
+
+    .spinner {
+      width: 36px;
+      height: 36px;
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      border-top-color: var(--accent-light);
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* Scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 4px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- SIDEBAR -->
+  <div id="sidebar">
+    <div id="sidebar-logo">
+      <span>🏥</span> Hospital Cleansing
+      <button id="btn-dark-mode" onclick="toggleDarkMode()" title="Toggle Dark Mode"
+        style="margin-left:auto;background:transparent;border:none;cursor:pointer;font-size:14px;">🌙</button>
+    </div>
+
+    <div class="sidebar-section">Data Input</div>
+    <button class="sidebar-btn" onclick="openFileDialog()">📂 Open File (Excel/CSV)</button>
+    <button class="sidebar-btn" onclick="openOCRModal()">🖼️ OCR Document → Table</button>
+    <button class="sidebar-btn" onclick="openPasteModal()">📋 Paste Clipboard Data</button>
+    <button class="sidebar-btn" onclick="loadSampleData()">🧪 Load Hospital Sample</button>
+
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section">⚡ Quick Accelerators</div>
+    <button class="sidebar-btn highlight" onclick="quickHospitalClean()">⚡ 1-Click Hospital Clean</button>
+    <button class="sidebar-btn" onclick="openDateConverterModal()">📅 แปลงวันที่ พ.ศ. ↔ ค.ศ.</button>
+    <button class="sidebar-btn" onclick="openSplitNameModal()">👤 แยกคำนำหน้า-ชื่อ-สกุล</button>
+    <button class="sidebar-btn" onclick="openKeyDedupModal()">🔑 ตัดข้อมูลซ้ำตาม HN/ID</button>
+
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section">Cleansing & Edit</div>
+    <button class="sidebar-btn" onclick="openCleanModal()">🧹 Smart Clean (Threshold 30%)</button>
+    <button class="sidebar-btn" onclick="openFindModal()">🔍 Find & Replace</button>
+    <button class="sidebar-btn" onclick="addNewRow()">➕ Add Row</button>
+    <button class="sidebar-btn" onclick="addNewColumn()">📊 Add Column</button>
+    <button class="sidebar-btn" onclick="openSetHeaderModal()">⬆️ Set Header Row</button>
+
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section">🛡️ PDPA & Security</div>
+    <button class="sidebar-btn" onclick="openPDPAModal()">⚙️ PDPA Columns Setup</button>
+    <button class="sidebar-btn" onclick="togglePDPAMasking()">🙈 Toggle Masking (หน้าจอ)</button>
+    <button class="sidebar-btn" onclick="openAuditModal()">📜 Audit Trail Log</button>
+
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section">Analytics & Export</div>
+    <button class="sidebar-btn" onclick="openDashboard()">📈 Quality Dashboard</button>
+    <button class="sidebar-btn" onclick="openExportModal('xlsx')">📊 Export Excel (PDPA Safe)</button>
+    <button class="sidebar-btn" onclick="openExportModal('csv')">📄 Export CSV (PDPA Safe)</button>
+    <button class="sidebar-btn" onclick="clearDraft()" style="color:var(--text-muted);font-size:11px;">🗑️ Clear Saved
+      Draft</button>
+  </div>
+
+  <!-- MAIN VIEW -->
+  <div id="main">
+    <!-- Recovery Draft Banner -->
+    <div id="recovery-banner">
+      <span id="recovery-msg">💾 พบข้อมูลร่างล่าสุดที่บันทึกค้างไว้ในเครื่อง</span>
+      <div>
+        <button class="btn btn-primary" style="padding:3px 10px;font-size:11px;"
+          onclick="restoreDraft()">กู้คืนข้อมูล</button>
+        <button class="btn btn-secondary" style="padding:3px 10px;font-size:11px;margin-left:4px;"
+          onclick="dismissRecoveryBanner()">ละเว้น</button>
+      </div>
+    </div>
+
+    <!-- Sheet Tabs -->
+    <div id="sheet-tab-container">
+      <div id="sheet-tab-bar">
+        <div id="sheet-tabs"></div>
+        <button class="sheet-tab-add" onclick="addNewSheet()" title="Add Sheet">+</button>
+      </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div id="toolbar">
+      <button class="tb-btn" onclick="openFileDialog()">📂 Open</button>
+      <button class="tb-btn" onclick="doUndo()" title="Ctrl+Z">↩ Undo</button>
+      <button class="tb-btn teal" onclick="quickHospitalClean()">⚡ Quick Clean</button>
+      <button class="tb-btn purple" onclick="openCleanModal()">🧹 Clean 30%</button>
+      <button class="tb-btn accent" onclick="openDateConverterModal()">📅 พ.ศ./ค.ศ.</button>
+      <button class="tb-btn success" onclick="openDashboard()">📈 Dashboard</button>
+      <div id="toolbar-title">Hospital Cleansing — Threshold Filter (30%) & PDPA Suite</div>
+      <button class="tb-btn danger" onclick="togglePDPAMasking()">🔒 PDPA Mask</button>
+      <button class="tb-btn" onclick="openExportModal('xlsx')">⬇ Export</button>
+    </div>
+
+    <!-- Table Container -->
+    <div id="table-wrap">
+      <div id="tbl-head-wrap">
+        <div id="tbl-head"></div>
+      </div>
+      <div id="tbl-body-wrap">
+        <div id="tbl-spacer-top"></div>
+        <div id="tbl-rows"></div>
+        <div id="tbl-spacer-bot"></div>
+      </div>
+    </div>
+
+    <!-- Status Bar -->
+    <div id="statusbar">
+      <span>📋 <b id="s-rows">0</b> rows</span>
+      <span>📊 <b id="s-cols">0</b> cols</span>
+      <span>📑 <b id="s-sheets">1</b> sheets</span>
+      <span>🛡️ <span id="pdpa-status">PDPA: off</span></span>
+      <span>💾 <span id="autosave-status" style="color:var(--success);">Draft synced</span></span>
+      <span style="margin-left:auto;" id="s-file">No file loaded</span>
+    </div>
+  </div>
+
+  <!-- DASHBOARD PANEL -->
+  <div id="dashboard-panel">
+    <div class="dashboard-header">
+      <h3>📈 Data Quality & Profiling Dashboard</h3>
+      <button class="dashboard-close" onclick="closeDashboard()">✕</button>
+    </div>
+    <div class="dashboard-content" id="dashboard-content">
+      <!-- Populated dynamically via renderDashboard() -->
+    </div>
+  </div>
+
+  <!-- LOADING OVERLAY & INPUTS -->
+  <div id="loading-overlay">
+    <div class="spinner"></div>
+    <div id="loading-text">กำลังประมวลผล...</div>
+  </div>
+  <div id="toast-container"></div>
+  <input type="file" id="file-input" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleFileInput(this)">
+  <input type="file" id="img-input" accept="image/*" style="display:none" onchange="handleImageInput(this)">
+
+  <script>
+    'use strict';
+
+    // ==========================================================
+    // 1. STATE & DATA MODEL
+    // ==========================================================
+    let sheets = [];
+    let activeSheetIdx = 0;
+    let rows = [], headers = [], fileName = '', pdpaEnabled = false, pdpaColumns = [];
+    let auditLogs = [];
+    let undoStack = [];
+    let db = null;
+    let autoSaveTimer = null;
+    let dashChartInstance = null;
+
+    function createSheet(name) {
+      return { name, rows: [], headers: [], fileName: '', pdpaColumns: [], pdpaEnabled: false };
+    }
+    sheets.push(createSheet('Sheet1'));
+
+    function syncFromActiveSheet() {
+      const s = sheets[activeSheetIdx];
+      rows = s.rows;
+      headers = s.headers;
+      fileName = s.fileName;
+      pdpaEnabled = s.pdpaEnabled || false;
+      pdpaColumns = s.pdpaColumns || [];
+    }
+
+    function syncToActiveSheet() {
+      if (!sheets[activeSheetIdx]) return;
+      sheets[activeSheetIdx].rows = rows;
+      sheets[activeSheetIdx].headers = headers;
+      sheets[activeSheetIdx].fileName = fileName;
+      sheets[activeSheetIdx].pdpaEnabled = pdpaEnabled;
+      sheets[activeSheetIdx].pdpaColumns = pdpaColumns;
+    }
+
+    function switchSheet(idx) {
+      if (idx < 0 || idx >= sheets.length) return;
+      syncToActiveSheet();
+      activeSheetIdx = idx;
+      syncFromActiveSheet();
+      renderSheetTabs();
+      renderTable();
+      updateStatus();
+      scheduleAutoSave();
+      showToast(`สลับไปยังชีท "${sheets[idx].name}"`, 'info');
+    }
+
+    function addNewSheet() {
+      pushUndo();
+      const newName = `Sheet${sheets.length + 1}`;
+      sheets.push(createSheet(newName));
+      switchSheet(sheets.length - 1);
+      addAuditLog('Add Sheet', `สร้างชีทใหม่ ${newName}`);
+      showToast(`สร้างชีท "${newName}" แล้ว`, 'success');
+    }
+
+    function deleteSheet(idx) {
+      if (sheets.length <= 1) { showToast('ต้องมีอย่างน้อย 1 ชีท', 'warn'); return; }
+      if (confirm(`คุณต้องการลบชีท "${sheets[idx].name}" ใช่หรือไม่?`)) {
+        pushUndo();
+        const delName = sheets[idx].name;
+        sheets.splice(idx, 1);
+        if (activeSheetIdx >= sheets.length) activeSheetIdx = sheets.length - 1;
+        switchSheet(activeSheetIdx);
+        addAuditLog('Delete Sheet', `ลบชีท ${delName}`);
+        showToast('ลบชีทเรียบร้อยแล้ว', 'success');
+      }
+    }
+
+    function renameSheet(idx, newName) {
+      if (newName?.trim()) {
+        sheets[idx].name = newName.trim();
+        renderSheetTabs();
+        scheduleAutoSave();
+      }
+    }
+
+    function renderSheetTabs() {
+      const container = document.getElementById('sheet-tabs');
+      if (!container) return;
+      container.innerHTML = '';
+      sheets.forEach((sheet, i) => {
+        const tab = document.createElement('button');
+        tab.className = 'sheet-tab' + (i === activeSheetIdx ? ' active' : '');
+        tab.innerHTML = `<span class="sheet-tab-name" ondblclick="event.stopPropagation();renameSheetPrompt(${i})">${sheet.name}</span>${sheets.length > 1 ? '<button class="sheet-tab-close" onclick="event.stopPropagation();deleteSheet(' + i + ')">✕</button>' : ''}`;
+        tab.onclick = () => switchSheet(i);
+        container.appendChild(tab);
+      });
+    }
+
+    function renameSheetPrompt(idx) {
+      const newName = prompt('เปลี่ยนชื่อชีท:', sheets[idx].name);
+      if (newName) renameSheet(idx, newName);
+    }
+
+    function updateStatus() {
+      document.getElementById('s-rows').textContent = rows.length.toLocaleString();
+      document.getElementById('s-cols').textContent = headers.length;
+      document.getElementById('s-sheets').textContent = sheets.length;
+      document.getElementById('s-file').textContent = fileName || 'No file';
+      updatePDPAStatus();
+    }
+
+    // ==========================================================
+    // 2. AUDIT TRAIL LOGGING
+    // ==========================================================
+    function addAuditLog(action, details = '') {
+      const timeStr = new Date().toLocaleString('th-TH');
+      auditLogs.unshift({ time: timeStr, action, details });
+      if (auditLogs.length > 100) auditLogs.pop();
+    }
+
+    function openAuditModal() {
+      const rowsHtml = auditLogs.length ? auditLogs.map((l, i) => `
+    <tr style="border-bottom:1px solid var(--border);">
+      <td style="padding:6px 10px;font-size:11px;color:var(--text-muted);">${l.time}</td>
+      <td style="padding:6px 10px;font-weight:600;font-size:11px;color:var(--accent);">${l.action}</td>
+      <td style="padding:6px 10px;font-size:11px;">${l.details}</td>
+    </tr>
+  `).join('') : '<tr><td colspan="3" style="text-align:center;padding:24px;color:var(--text-muted);">ไม่มีประวัติการกระทำ</td></tr>';
+
+      openModal('📜 Audit Trail Log (ประวัติการจัดการข้อมูล)', `
+    <div style="margin-bottom:10px;font-size:12px;color:var(--text-muted);">
+      ระบบบันทึกประวัติการแก้ไข คลีนซิ่ง และการส่งออกข้อมูลส่วนบุคคล เพื่อการตรวจสอบย้อนหลังตามเกณฑ์ PDPA
+    </div>
+    <div style="max-height:340px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius-sm);">
+      <table style="width:100%;border-collapse:collapse;text-align:left;">
+        <thead style="background:var(--surface-secondary);position:sticky;top:0;">
+          <tr>
+            <th style="padding:8px 10px;font-size:11px;">เวลา</th>
+            <th style="padding:8px 10px;font-size:11px;">การกระทำ (Action)</th>
+            <th style="padding:8px 10px;font-size:11px;">รายละเอียด (Details)</th>
+          </tr>
+        </thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
+    </div>
+  `, [{ label: 'ปิด', cls: 'btn-secondary', fn: closeModal }]);
+    }
+
+    // ==========================================================
+    // 3. PDPA PROTECTION & MASKING ENGINE
+    // ==========================================================
+    const PII_KEYWORDS = [
+      'ชื่อ', 'นาม', 'สกุล', 'name', 'hn', 'id', 'patient', 'cid',
+      'เลขบัตร', 'บัตรประชาชน', 'citizen', 'phone', 'tel', 'โทร', 'เบอร์',
+      'address', 'ที่อยู่', 'dob', 'birth', 'เกิด', 'diag', 'icd', 'โรค', 'สิทธิ', 'pttype', 'vn', 'an'
+    ];
+
+    function detectPDPAColumns() {
+      return headers.map((h, i) => {
+        const colName = String(h || '').toLowerCase();
+        const isKeywordMatch = PII_KEYWORDS.some(k => colName.includes(k));
+        // Sample check first 10 rows for 13-digit ID or Thai phone format
+        let hasPattern = false;
+        for (let r = 0; r < Math.min(10, rows.length); r++) {
+          const val = String(rows[r][i] || '').replace(/[- \s]/g, '');
+          if (/^\d{13}$/.test(val) || /^0[689]\d{8}$/.test(val)) {
+            hasPattern = true; break;
+          }
+        }
+        return (isKeywordMatch || hasPattern) ? i : -1;
+      }).filter(i => i !== -1);
+    }
+
+    function updatePDPAStatus() {
+      const span = document.getElementById('pdpa-status');
+      if (pdpaEnabled && pdpaColumns.length) {
+        span.innerHTML = `<span style="color:var(--danger);font-weight:700;">ON (${pdpaColumns.length} คอลัมน์)</span>`;
+      } else if (pdpaEnabled) {
+        span.textContent = 'ON (ไม่มี PII)';
+      } else {
+        span.textContent = 'OFF';
+      }
+    }
+
+    function maskPIIValue(val, colIdx) {
+      if (!pdpaEnabled || !pdpaColumns.includes(colIdx) || val === null || val === undefined || val === '') return val;
+      const str = String(val).trim();
+      const rawNum = str.replace(/[- \s]/g, '');
+
+      // 13-digit Thai Citizen ID Masking: 1-2345-*****-**-9
+      if (/^\d{13}$/.test(rawNum)) {
+        return `${rawNum.slice(0, 1)}-${rawNum.slice(1, 5)}-*****--${rawNum.slice(12)}`;
+      }
+      // Thai Phone Number Masking: 081-***-5678
+      if (/^0[689]\d{8}$/.test(rawNum)) {
+        return `${rawNum.slice(0, 3)}-***-${rawNum.slice(6)}`;
+      }
+      // Standard text/name/HN masking
+      if (str.length <= 2) return '***';
+      return str[0] + '***' + str[str.length - 1];
+    }
+
+    function hashAnonymize(val) {
+      if (!val) return '';
+      let hash = 0;
+      const str = String(val);
+      for (let i = 0; i < str.length; i++) {
+        hash = ((hash << 5) - hash) + str.charCodeAt(i);
+        hash |= 0;
+      }
+      return 'ANON_' + Math.abs(hash).toString(16).padStart(6, '0').toUpperCase();
+    }
+
+    function togglePDPAMasking() {
+      pdpaEnabled = !pdpaEnabled;
+      if (pdpaEnabled && !pdpaColumns.length) {
+        pdpaColumns = detectPDPAColumns();
+      }
+      renderTable();
+      updatePDPAStatus();
+      addAuditLog('Toggle PDPA Masking', `สถานะ: ${pdpaEnabled ? 'เปิด (ON)' : 'ปิด (OFF)'}`);
+      showToast(`ระบบปกป้องข้อมูล PDPA: ${pdpaEnabled ? 'เปิดใช้งาน (Masking ON)' : 'ปิดใช้งาน'}`, 'info');
+    }
+
+    function openPDPAModal() {
+      const options = headers.map((h, i) => `
+    <label style="display:flex;align-items:center;gap:8px;padding:6px;border-bottom:1px solid var(--border);">
+      <input type="checkbox" class="pdpa-col-select" value="${i}" ${pdpaColumns.includes(i) ? 'checked' : ''}>
+      <span style="font-weight:600;">[${i + 1}] ${h || `Column ${i + 1}`}</span>
+    </label>
+  `).join('');
+
+      openModal('🛡️ ตั้งค่าคอลัมน์ข้อมูลส่วนบุคคล (PDPA Settings)', `
+    <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">
+      ระบุคอลัมน์ที่เป็นข้อมูลระบุตัวตน (PII) เช่น HN, ชื่อ-สกุล, เลขประจำตัวประชาชน, เบอร์โทรศัพท์, ข้อมูลการรักษา
+    </div>
+    <div class="form-label">เลือกคอลัมน์ข้อมูลส่วนบุคคล (PII Columns):</div>
+    <div style="max-height:220px;overflow-y:auto;background:var(--surface-secondary);border-radius:var(--radius-sm);padding:8px;margin-bottom:14px;border:1px solid var(--border);">
+      ${options || '<div style="padding:10px;text-align:center;">ไม่มีข้อมูลคอลัมน์</div>'}
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--surface-secondary);border-radius:var(--radius-sm);border:1px solid var(--border);">
+      <div>
+        <strong>เปิดการซ่อนข้อมูล (Masking Mode)</strong>
+        <div style="font-size:11px;color:var(--text-muted);">ข้อมูลจะถูกแสดงเป็น ช***ล เพื่อความปลอดภัย</div>
+      </div>
+      <input type="checkbox" id="pdpa-master-switch" style="width:18px;height:18px;cursor:pointer;" ${pdpaEnabled ? 'checked' : ''}>
+    </div>
+  `, [
+        {
+          label: 'บันทึกการตั้งค่า',
+          cls: 'btn-primary',
+          fn: () => {
+            pdpaColumns = [...document.querySelectorAll('.pdpa-col-select:checked')].map(c => +c.value);
+            pdpaEnabled = document.getElementById('pdpa-master-switch')?.checked || false;
+            renderTable();
+            updatePDPAStatus();
+            scheduleAutoSave();
+            closeModal();
+            addAuditLog('Configure PDPA', `กำหนด ${pdpaColumns.length} คอลัมน์เป็น PII`);
+            showToast('บันทึกการตั้งค่า PDPA แล้ว', 'success');
+          }
+        },
+        { label: 'ยกเลิก', cls: 'btn-secondary', fn: closeModal }
+      ]);
+    }
+
+    // ==========================================================
+    // 4. VIRTUAL SCROLL & TABLE RENDERING
+    // ==========================================================
+    let visibleStart = 0, visibleEnd = 0, rowHeight = 34, renderId = null;
+
+    function createRowElement(idx) {
+      const row = rows[idx];
+      const div = document.createElement('div');
+      div.className = 'tbl-row';
+
+      const rn = document.createElement('div');
+      rn.className = 'td rn';
+      rn.textContent = idx + 1;
+      div.appendChild(rn);
+
+      headers.forEach((_, ci) => {
+        const cell = document.createElement('div');
+        cell.className = 'td';
+        cell.style.width = '130px';
+        const val = row[ci];
+        let display = (val !== undefined && val !== null) ? String(val) : '';
+
+        if (pdpaEnabled && pdpaColumns.includes(ci) && val) {
+          display = maskPIIValue(val, ci);
+          cell.classList.add('td-pii-cell');
+        }
+
+        cell.textContent = display;
+
+        cell.ondblclick = () => {
+          if (pdpaEnabled && pdpaColumns.includes(ci)) {
+            showToast('ข้อมูลถูกป้องกันโดย PDPA Masking (กรุณาปลดล็อกเพื่อแก้ไข)', 'warn');
+            return;
+          }
+          const input = document.createElement('input');
+          input.className = 'form-input';
+          input.style.padding = '2px 6px';
+          input.style.height = '28px';
+          input.value = row[ci] || '';
+          cell.innerHTML = '';
+          cell.appendChild(input);
+          input.focus();
+
+          const save = () => {
+            const newVal = input.value;
+            if (newVal !== String(row[ci] || '')) {
+              pushUndo();
+              row[ci] = (isNaN(newVal) || newVal === '') ? newVal : +newVal;
+              renderTable();
+              scheduleAutoSave();
+            }
+          };
+          input.onblur = save;
+          input.onkeydown = e => {
+            if (e.key === 'Enter') save();
+            if (e.key === 'Escape') renderTable();
+          };
+        };
+
+        div.appendChild(cell);
+      });
+      return div;
+    }
+
+    function renderVisibleRows() {
+      const container = document.getElementById('tbl-rows');
+      if (!container) return;
+      if (!rows.length) {
+        container.innerHTML = '<div style="padding:60px;text-align:center;color:var(--text-muted);">ไม่มีข้อมูล — กรุณาเปิดไฟล์หรือกดปุ่ม Load Hospital Sample</div>';
+        return;
+      }
+      const fragment = document.createDocumentFragment();
+      for (let i = visibleStart; i <= visibleEnd && i < rows.length; i++) {
+        fragment.appendChild(createRowElement(i));
+      }
+      container.innerHTML = '';
+      container.appendChild(fragment);
+      document.getElementById('tbl-spacer-top').style.height = (visibleStart * rowHeight) + 'px';
+      document.getElementById('tbl-spacer-bot').style.height = ((rows.length - visibleEnd - 1) * rowHeight) + 'px';
+    }
+
+    function updateVirtualScroll() {
+      const wrap = document.getElementById('tbl-body-wrap');
+      if (!wrap || !rows.length) return;
+      const scrollTop = wrap.scrollTop, viewH = wrap.clientHeight, buffer = 15;
+      const newStart = Math.max(0, Math.floor(scrollTop / rowHeight) - buffer);
+      const newEnd = Math.min(rows.length - 1, Math.ceil((scrollTop + viewH) / rowHeight) + buffer);
+      if (newStart !== visibleStart || newEnd !== visibleEnd) {
+        visibleStart = newStart;
+        visibleEnd = newEnd;
+        if (renderId) cancelAnimationFrame(renderId);
+        renderId = requestAnimationFrame(() => renderVisibleRows());
+      }
+    }
+
+    function renderHeader() {
+      const head = document.getElementById('tbl-head');
+      head.innerHTML = '';
+      const rn = document.createElement('div');
+      rn.className = 'th rn';
+      rn.textContent = '#';
+      head.appendChild(rn);
+
+      headers.forEach((h, i) => {
+        const th = document.createElement('div');
+        th.className = 'th';
+        th.style.width = '130px';
+        th.textContent = h || `Col${i + 1}`;
+        if (pdpaColumns.includes(i)) {
+          th.classList.add('th-pii');
+          const badge = document.createElement('span');
+          badge.textContent = '🔒';
+          badge.title = 'PDPA Protected';
+          th.appendChild(badge);
+        }
+        head.appendChild(th);
+      });
+    }
+
+    function renderTable() {
+      renderHeader();
+      updateVirtualScroll();
+      updateStatus();
+    }
+
+    // ==========================================================
+    // 5. SMART CLEANSING & THRESHOLD ENGINE
+    // ==========================================================
+    function getNonBlankRatioPerRow() {
+      return rows.map(row => row.filter(cell => cell !== '' && cell !== null && cell !== undefined).length / (headers.length || 1));
+    }
+
+    function getNonBlankRatioPerCol() {
+      const ratios = [];
+      for (let ci = 0; ci < headers.length; ci++) {
+        let nonBlank = 0;
+        for (let ri = 0; ri < rows.length; ri++) {
+          if (rows[ri][ci] !== '' && rows[ri][ci] !== null && rows[ri][ci] !== undefined) nonBlank++;
+        }
+        ratios.push(nonBlank / (rows.length || 1));
+      }
+      return ratios;
+    }
+
+    function deleteRowsBelowThreshold(threshold = 0.3) {
+      const ratios = getNonBlankRatioPerRow();
+      const toDelete = [];
+      ratios.forEach((ratio, idx) => { if (ratio < threshold) toDelete.push(idx); });
+      if (!toDelete.length) {
+        showToast(`ไม่พบแถวที่มีข้อมูลน้อยกว่า ${threshold * 100}%`, 'warn');
+        return 0;
+      }
+      pushUndo();
+      rows = rows.filter((_, idx) => !toDelete.includes(idx));
+      renderTable();
+      addAuditLog('Threshold Filter Rows', `ลบออก ${toDelete.length} แถว (ข้อมูล < ${threshold * 100}%)`);
+      showToast(`ลบ ${toDelete.length} แถวที่มีข้อมูลน้อยกว่า ${threshold * 100}% สำเร็จ`, 'success');
+      scheduleAutoSave();
+      return toDelete.length;
+    }
+
+    function deleteColsBelowThreshold(threshold = 0.3) {
+      const ratios = getNonBlankRatioPerCol();
+      const toDelete = [];
+      ratios.forEach((ratio, ci) => { if (ratio < threshold) toDelete.push(ci); });
+      if (!toDelete.length) {
+        showToast(`ไม่พบคอลัมน์ที่มีข้อมูลน้อยกว่า ${threshold * 100}%`, 'warn');
+        return 0;
+      }
+      pushUndo();
+      const keepMask = headers.map((_, ci) => !toDelete.includes(ci));
+      headers = headers.filter((_, ci) => keepMask[ci]);
+      rows = rows.map(row => row.filter((_, ci) => keepMask[ci]));
+      pdpaColumns = pdpaColumns.filter(idx => !toDelete.includes(idx)).map(oldIdx => {
+        let shift = 0;
+        for (let i = 0; i < oldIdx; i++) if (!keepMask[i]) shift++;
+        return oldIdx - shift;
+      });
+      renderTable();
+      addAuditLog('Threshold Filter Cols', `ลบออก ${toDelete.length} คอลัมน์ (ข้อมูล < ${threshold * 100}%)`);
+      showToast(`ลบ ${toDelete.length} คอลัมน์ที่มีข้อมูลน้อยกว่า ${threshold * 100}% สำเร็จ`, 'success');
+      scheduleAutoSave();
+      return toDelete.length;
+    }
+
+    function calcCleanStats() {
+      let blankCells = 0;
+      rows.forEach(r => {
+        r.forEach(c => {
+          if (c === '' || c === null || c === undefined) blankCells++;
+        });
+      });
+      const sigs = new Set(rows.map(r => JSON.stringify(r)));
+      const dupRows = rows.length - sigs.size;
+      const blankPct = (rows.length * headers.length) ? Math.round(blankCells / (rows.length * headers.length) * 100) : 0;
+      return { N: rows.length, C: headers.length, blankCells, blankPct, dupRows };
+    }
+
+    function openCleanModal() {
+      const stats = calcCleanStats();
+      const colOpts = headers.map((h, i) => `<option value="${i}">${h || `Col${i + 1}`}</option>`).join('');
+      const colChecklist = headers.map((h, i) => `<label><input type="checkbox" class="col-chk" value="${i}"> [${i + 1}] ${h || `Col${i + 1}`}</label>`).join('');
+
+      openModal('🧹 Smart Clean & Data Filtering (Threshold 30%)', `
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-value">${stats.blankCells.toLocaleString()}</div><div class="stat-label">Empty Cells (${stats.blankPct}%)</div></div>
+      <div class="stat-card"><div class="stat-value">${stats.dupRows.toLocaleString()}</div><div class="stat-label">Duplicate Rows</div></div>
+      <div class="stat-card"><div class="stat-value">${stats.N.toLocaleString()}</div><div class="stat-label">Total Rows</div></div>
+      <div class="stat-card"><div class="stat-value">${stats.C}</div><div class="stat-label">Total Columns</div></div>
+    </div>
+    
+    <div class="cleansing-options">
+      <label><input type="checkbox" id="cl-trim" checked> ✂️ Trim ช่องว่างหน้า-ท้ายทุกเซลล์</label>
+      <label><input type="checkbox" id="cl-num"> 🔢 ล้างสัญลักษณ์ตัวเลข (เอา ฿, คอมม่า ออก)</label>
+    </div>
+
+    <div class="rowcol-grid">
+      <div class="clean-section">
+        <h4>🗑 จัดการแถว (Delete Rows)</h4>
+        <button class="clean-btn clean-btn-red" onclick="cleanDeleteRows('blank')">ลบแถวที่ว่างทั้งหมด (Empty Rows)</button>
+        <button class="clean-btn clean-btn-red" onclick="cleanDeleteRows('dup')">ลบแถวที่ซ้ำกันทุกคอลัมน์ (Exact Duplicates)</button>
+        
+        <div style="margin:8px 0;">
+          <input type="text" id="row-index-input" placeholder="ระบุเลขแถว เช่น 1, 3, 5-10" class="form-input">
+          <button class="clean-btn clean-btn-orange" style="margin-top:4px;" onclick="cleanDeleteRows('index')">ลบตามหมายเลขแถว</button>
+        </div>
+
+        <div>
+          <select id="filter-col" class="form-select">${colOpts}</select>
+          <div class="filter-group">
+            <select id="filter-op" class="form-select" style="max-width:110px;">
+              <option value="eq">= เท่ากับ</option>
+              <option value="contains">ประกอบด้วย</option>
+              <option value="blank">เป็นค่าว่าง</option>
+            </select>
+            <input type="text" id="filter-val" placeholder="ค่าที่ค้นหา" class="form-input">
+            <button class="btn btn-danger" onclick="cleanDeleteRows('filter')">ลบ</button>
+          </div>
+        </div>
+
+        <div class="threshold-group">
+          <strong>⭐ Threshold Filter: ลบแถวที่มีข้อมูลไม่ถึง 30%</strong>
+          <button class="clean-btn clean-btn-red" style="margin-top:6px;" onclick="executeDeleteRowsThreshold()">🗑 ลบแถวที่มีข้อมูล < 30%</button>
+        </div>
+      </div>
+
+      <div class="clean-section">
+        <h4>🗑 จัดการคอลัมน์ (Delete Columns)</h4>
+        <button class="clean-btn clean-btn-purple" onclick="cleanDeleteCols('blank')">ลบคอลัมน์ที่ว่างทั้งหมด (All-blank)</button>
+        <button class="clean-btn clean-btn-purple" onclick="cleanDeleteCols('selected')">ลบคอลัมน์ที่เลือกในรายการด้านล่าง</button>
+        <div class="col-checklist">${colChecklist}</div>
+
+        <div class="threshold-group">
+          <strong>⭐ Threshold Filter: ลบคอลัมน์ที่มีข้อมูลไม่ถึง 30%</strong>
+          <button class="clean-btn clean-btn-purple" style="margin-top:6px;" onclick="executeDeleteColsThreshold()">📉 ลบคอลัมน์ที่มีข้อมูล < 30%</button>
+        </div>
+      </div>
+    </div>
+  `, [
+        {
+          label: 'บันทึกการคลีนซิ่ง (Apply)',
+          cls: 'btn-success',
+          fn: () => {
+            pushUndo();
+            if (document.getElementById('cl-trim')?.checked) {
+              rows = rows.map(r => r.map(c => typeof c === 'string' ? c.trim() : c));
+            }
+            if (document.getElementById('cl-num')?.checked) {
+              rows = rows.map(r => r.map(c => typeof c === 'string' ? c.replace(/[฿,\s]/g, '') : c));
+            }
+            renderTable();
+            closeModal();
+            scheduleAutoSave();
+            addAuditLog('Smart Clean Applied', 'Trim ช่องว่าง และล้างสัญลักษณ์ตัวเลข');
+            showToast('ทำความสะอาดข้อมูลเรียบร้อยแล้ว', 'success');
+          }
+        },
+        { label: 'ปิด', cls: 'btn-secondary', fn: closeModal }
+      ]);
+    }
+
+    function executeDeleteRowsThreshold() { deleteRowsBelowThreshold(0.3); closeModal(); openCleanModal(); }
+    function executeDeleteColsThreshold() { deleteColsBelowThreshold(0.3); closeModal(); openCleanModal(); }
+
+    function cleanDeleteRows(type) {
+      pushUndo();
+      let toDelete = new Set();
+      if (type === 'blank') {
+        rows.forEach((r, i) => { if (r.every(c => c === '' || c === null || c === undefined)) toDelete.add(i); });
+      } else if (type === 'dup') {
+        const seen = new Map();
+        rows.forEach((r, i) => {
+          const k = JSON.stringify(r);
+          if (seen.has(k)) toDelete.add(i);
+          else seen.set(k, i);
+        });
+      } else if (type === 'index') {
+        const str = document.getElementById('row-index-input')?.value;
+        if (str) {
+          str.split(',').forEach(part => {
+            part = part.trim();
+            const m = part.match(/^(\d+)-(\d+)$/);
+            if (m) {
+              for (let i = +m[1]; i <= +m[2]; i++) toDelete.add(i - 1);
+            } else if (/^\d+$/.test(part)) toDelete.add(+part - 1);
+          });
+        }
+      } else if (type === 'filter') {
+        const ci = +document.getElementById('filter-col').value;
+        const op = document.getElementById('filter-op').value;
+        const val = document.getElementById('filter-val').value;
+        rows.forEach((r, i) => {
+          const cell = String(r[ci] ?? '');
+          let match = false;
+          if (op === 'eq') match = (cell === val);
+          else if (op === 'contains') match = cell.toLowerCase().includes(val.toLowerCase());
+          else if (op === 'blank') match = (cell.trim() === '');
+          if (match) toDelete.add(i);
+        });
+      }
+
+      if (!toDelete.size) { showToast('ไม่พบแถวตามเงื่อนไข', 'warn'); return; }
+      rows = rows.filter((_, i) => !toDelete.has(i));
+      renderTable();
+      scheduleAutoSave();
+      addAuditLog(`Delete Rows (${type})`, `ลบออก ${toDelete.size} แถว`);
+      showToast(`ลบ ${toDelete.size} แถวสำเร็จ`, 'success');
+    }
+
+    function cleanDeleteCols(type) {
+      pushUndo();
+      let toDelete = new Set();
+      if (type === 'blank') {
+        headers.forEach((_, ci) => {
+          if (rows.every(r => r[ci] === '' || r[ci] === null || r[ci] === undefined)) toDelete.add(ci);
+        });
+      } else if (type === 'selected') {
+        document.querySelectorAll('.col-chk:checked').forEach(chk => toDelete.add(+chk.value));
+      }
+
+      if (!toDelete.size) { showToast('ไม่พบคอลัมน์ที่เลือก', 'warn'); return; }
+      const keepMask = headers.map((_, ci) => !toDelete.has(ci));
+      headers = headers.filter((_, ci) => keepMask[ci]);
+      rows = rows.map(row => row.filter((_, ci) => keepMask[ci]));
+      pdpaColumns = pdpaColumns.filter(idx => !toDelete.has(idx)).map(oldIdx => {
+        let shift = 0;
+        for (let i = 0; i < oldIdx; i++) if (!keepMask[i]) shift++;
+        return oldIdx - shift;
+      });
+      renderTable();
+      scheduleAutoSave();
+      addAuditLog(`Delete Columns (${type})`, `ลบออก ${toDelete.size} คอลัมน์`);
+      showToast(`ลบ ${toDelete.size} คอลัมน์สำเร็จ`, 'success');
+    }
+
+    // ==========================================================
+    // 6. ACCELERATOR TOOLS (HOSPITAL SPECIALIZED)
+    // ==========================================================
+
+    // 6.1 One-Click Hospital Clean Preset
+    function quickHospitalClean() {
+      if (!rows.length) { showToast('ไม่มีข้อมูลสำหรับการคลีนซิ่ง', 'warn'); return; }
+      pushUndo();
+      showLoading('กำลังทำความสะอาดด่วนตามมาตรฐาน รพ...');
+
+      setTimeout(() => {
+        // 1. Trim whitespace
+        rows = rows.map(r => r.map(c => typeof c === 'string' ? c.trim() : c));
+
+        // 2. Remove 100% empty rows
+        const beforeCount = rows.length;
+        rows = rows.filter(r => r.some(c => c !== '' && c !== null && c !== undefined));
+        const emptyRowsRemoved = beforeCount - rows.length;
+
+        // 3. Remove rows with < 30% data
+        const ratios = getNonBlankRatioPerRow();
+        const keepRows = [];
+        let thresholdRowsRemoved = 0;
+        ratios.forEach((ratio, idx) => {
+          if (ratio >= 0.3) keepRows.push(rows[idx]);
+          else thresholdRowsRemoved++;
+        });
+        rows = keepRows;
+
+        // 4. Auto-detect PII if not yet detected
+        if (!pdpaColumns.length) pdpaColumns = detectPDPAColumns();
+
+        hideLoading();
+        renderTable();
+        scheduleAutoSave();
+        addAuditLog('1-Click Hospital Clean', `ลบแถวว่าง ${emptyRowsRemoved} แถว, ลบแถว <30% อีก ${thresholdRowsRemoved} แถว`);
+        showToast(`⚡ 1-Click Clean สำเร็จ! (ลบแถวว่าง: ${emptyRowsRemoved}, ข้อมูลต่ำ 30%: ${thresholdRowsRemoved})`, 'success');
+      }, 200);
+    }
+
+    // 6.2 Thai Buddhist Era Date Standardizer (พ.ศ. ↔ ค.ศ.)
+    function openDateConverterModal() {
+      if (!headers.length) { showToast('กรุณาเปิดไฟล์ก่อน', 'warn'); return; }
+      const colOpts = headers.map((h, i) => `<option value="${i}">${h || `Col${i + 1}`}</option>`).join('');
+
+      openModal('📅 เครื่องมือแปลงวันที่ พ.ศ. ↔ ค.ศ. (Thai Date Standardizer)', `
+    <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">
+      ตรวจจับปี พ.ศ. (เช่น 2560-2575) และแปลงเป็นปี ค.ศ. สากล (ลบ 543) พร้อมจัดรูปแบบมาตรฐาน YYYY-MM-DD
+    </div>
+    <div class="form-label">เลือกคอลัมน์วันที่:</div>
+    <select id="date-col-select" class="form-select" style="margin-bottom:12px;">${colOpts}</select>
+    
+    <div class="form-label">รูปแบบเป้าหมาย (Target Format):</div>
+    <select id="date-target-format" class="form-select" style="margin-bottom:12px;">
+      <option value="ce-iso">ค.ศ. มาตรฐานสากล: YYYY-MM-DD (เช่น 2024-05-15)</option>
+      <option value="ce-dmy">ค.ศ. วัน/เดือน/ปี: DD/MM/YYYY (เช่น 15/05/2024)</option>
+      <option value="be-iso">พ.ศ. มาตรฐาน: YYYY-MM-DD (เช่น 2567-05-15)</option>
+      <option value="be-dmy">พ.ศ. วัน/เดือน/ปี: DD/MM/YYYY (เช่น 15/05/2567)</option>
+    </select>
+  `, [
+        {
+          label: 'แปลงรูปแบบวันที่',
+          cls: 'btn-primary',
+          fn: () => {
+            const colIdx = +document.getElementById('date-col-select').value;
+            const targetFmt = document.getElementById('date-target-format').value;
+            executeDateStandardize(colIdx, targetFmt);
+            closeModal();
+          }
+        },
+        { label: 'ยกเลิก', cls: 'btn-secondary', fn: closeModal }
+      ]);
+    }
+
+    function executeDateStandardize(colIdx, targetFmt) {
+      pushUndo();
+      let convertedCount = 0;
+      const isTargetCE = targetFmt.startsWith('ce');
+      const isDMY = targetFmt.endsWith('dmy');
+
+      rows = rows.map(row => {
+        let val = row[colIdx];
+        if (!val) return row;
+        const str = String(val).trim();
+        let y, m, d;
+
+        // Pattern 1: YYYY-MM-DD or YYYY/MM/DD
+        const m1 = str.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})$/);
+        // Pattern 2: DD-MM-YYYY or DD/MM/YYYY
+        const m2 = str.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})$/);
+
+        if (m1) {
+          y = +m1[1]; m = +m1[2]; d = +m1[3];
+        } else if (m2) {
+          d = +m2[1]; m = +m2[2]; y = +m2[3];
+        } else {
+          const dt = new Date(str);
+          if (!isNaN(dt.getTime())) {
+            y = dt.getFullYear(); m = dt.getMonth() + 1; d = dt.getDate();
+          }
+        }
+
+        if (y && m && d) {
+          if (isTargetCE && y > 2400) y -= 543;
+          else if (!isTargetCE && y < 2400) y += 543;
+
+          const pad = n => String(n).padStart(2, '0');
+          const newDateStr = isDMY ? `${pad(d)}/${pad(m)}/${y}` : `${y}-${pad(m)}-${pad(d)}`;
+          if (newDateStr !== str) {
+            convertedCount++;
+            row[colIdx] = newDateStr;
+          }
+        }
+        return row;
+      });
+
+      renderTable();
+      scheduleAutoSave();
+      addAuditLog('Standardize Date', `คอลัมน์ "${headers[colIdx]}" แปลงแล้ว ${convertedCount} เซลล์`);
+      showToast(`แปลงวันที่ในคอลัมน์ "${headers[colIdx]}" สำเร็จ ${convertedCount} เซลล์`, 'success');
+    }
+
+    // 6.3 Split Name & Prefix Tool (แยกคำนำหน้า-ชื่อ-สกุล)
+    function openSplitNameModal() {
+      if (!headers.length) { showToast('กรุณาเปิดไฟล์ก่อน', 'warn'); return; }
+      const colOpts = headers.map((h, i) => `<option value="${i}">${h || `Col${i + 1}`}</option>`).join('');
+
+      openModal('👤 เครื่องมือแยกคำนำหน้า - ชื่อ - นามสกุล', `
+    <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">
+      แยกคำนำหน้า เช่น นาย, นาง, นางสาว, น.ส., ด.ช., ด.ญ., นพ., พญ. ออกเป็นคอลัมน์ "คำนำหน้า", "ชื่อ", "นามสกุล" อัตโนมัติ
+    </div>
+    <div class="form-label">เลือกคอลัมน์ชื่อ-สกุลเต็ม:</div>
+    <select id="split-name-col" class="form-select" style="margin-bottom:12px;">${colOpts}</select>
+    <label style="display:flex;align-items:center;gap:8px;font-size:12px;">
+      <input type="checkbox" id="split-keep-orig" checked> คงคอลัมน์เดิมไว้ (เพิ่ม 3 คอลัมน์ใหม่ต่อท้าย)
+    </label>
+  `, [
+        {
+          label: 'แยกคอลัมน์',
+          cls: 'btn-primary',
+          fn: () => {
+            const colIdx = +document.getElementById('split-name-col').value;
+            const keepOrig = document.getElementById('split-keep-orig').checked;
+            executeSplitName(colIdx, keepOrig);
+            closeModal();
+          }
+        },
+        { label: 'ยกเลิก', cls: 'btn-secondary', fn: closeModal }
+      ]);
+    }
+
+    function executeSplitName(colIdx, keepOrig) {
+      pushUndo();
+      const prefixes = [
+        'นางสาว', 'น.ส.', 'นาย', 'นาง', 'ด.ช.', 'ด.ญ.',
+        'นพ.', 'พญ.', 'ทพ.', 'ทพญ.', 'ศ.', 'ผศ.', 'รศ.', 'ดร.',
+        'Mr.', 'Mrs.', 'Ms.', 'Miss', 'Dr.'
+      ];
+
+      // Insert 3 new columns
+      const pCol = 'Prefix (คำนำหน้า)';
+      const fCol = 'First Name (ชื่อ)';
+      const lCol = 'Last Name (นามสกุล)';
+      headers.push(pCol, fCol, lCol);
+
+      // Mark new name columns as PII
+      const pIdx = headers.length - 3;
+      const fIdx = headers.length - 2;
+      const lIdx = headers.length - 1;
+      pdpaColumns.push(pIdx, fIdx, lIdx);
+
+      rows.forEach(row => {
+        const raw = String(row[colIdx] || '').trim();
+        let pref = '', rest = raw;
+
+        for (const p of prefixes) {
+          if (rest.startsWith(p)) {
+            pref = p;
+            rest = rest.slice(p.length).trim();
+            break;
+          }
+        }
+
+        const parts = rest.split(/\s+/).filter(Boolean);
+        const first = parts[0] || '';
+        const last = parts.slice(1).join(' ') || '';
+
+        row.push(pref, first, last);
+      });
+
+      if (!keepOrig) {
+        // Remove original column
+        headers.splice(colIdx, 1);
+        rows.forEach(r => r.splice(colIdx, 1));
+        pdpaColumns = detectPDPAColumns();
+      }
+
+      renderTable();
+      scheduleAutoSave();
+      addAuditLog('Split Full Name', `แยกคำนำหน้า-ชื่อ-สกุล จากคอลัมน์ ${headers[colIdx] || ''}`);
+      showToast('แยกคำนำหน้า ชื่อ และนามสกุล สำเร็จ!', 'success');
+    }
+
+    // 6.4 Key-based Deduplication (ลบข้อมูลซ้ำตามรหัส HN/ID)
+    function openKeyDedupModal() {
+      if (!headers.length) { showToast('กรุณาเปิดไฟล์ก่อน', 'warn'); return; }
+      const colOpts = headers.map((h, i) => `<option value="${i}">${h || `Col${i + 1}`}</option>`).join('');
+
+      openModal('🔑 ตัดข้อมูลซ้ำตามรหัสประจำตัว (Key-based Dedup)', `
+    <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">
+      เลือกคอลัมน์หลักที่เป็น Key เช่น <strong>HN, เลขบัตรประชาชน หรือ Visit ID</strong> เพื่อคัดกรองเรคคอร์ดที่ซ้ำกัน
+    </div>
+    <div class="form-label">เลือกคอลัมน์ Key:</div>
+    <select id="dedup-key-col" class="form-select" style="margin-bottom:12px;">${colOpts}</select>
+    
+    <div class="form-label">กลยุทธ์การเก็บข้อมูล (Strategy):</div>
+    <select id="dedup-strategy" class="form-select" style="margin-bottom:12px;">
+      <option value="first">เก็บแถวแรกที่พบ (Keep First Occurrence)</option>
+      <option value="last">เก็บแถวล่าสุด (Keep Last Occurrence)</option>
+    </select>
+  `, [
+        {
+          label: 'ลบข้อมูลซ้ำ',
+          cls: 'btn-danger',
+          fn: () => {
+            const colIdx = +document.getElementById('dedup-key-col').value;
+            const strategy = document.getElementById('dedup-strategy').value;
+            executeKeyDedup(colIdx, strategy);
+            closeModal();
+          }
+        },
+        { label: 'ยกเลิก', cls: 'btn-secondary', fn: closeModal }
+      ]);
+    }
+
+    function executeKeyDedup(colIdx, strategy) {
+      pushUndo();
+      const seen = new Map();
+      const keyName = headers[colIdx] || `Col${colIdx + 1}`;
+      let newRows = [];
+
+      if (strategy === 'first') {
+        rows.forEach(r => {
+          const k = String(r[colIdx] ?? '').trim();
+          if (!k || !seen.has(k)) {
+            if (k) seen.set(k, true);
+            newRows.push(r);
+          }
+        });
+      } else {
+        // Keep last
+        const lastMap = new Map();
+        rows.forEach((r, idx) => {
+          const k = String(r[colIdx] ?? '').trim();
+          if (k) lastMap.set(k, idx);
+        });
+        newRows = rows.filter((r, idx) => {
+          const k = String(r[colIdx] ?? '').trim();
+          return !k || lastMap.get(k) === idx;
+        });
+      }
+
+      const removed = rows.length - newRows.length;
+      rows = newRows;
+      renderTable();
+      scheduleAutoSave();
+      addAuditLog('Key Deduplication', `ลบข้อมูลซ้ำตามคอลัมน์ "${keyName}" ออก ${removed} แถว`);
+      showToast(`ลบข้อมูลซ้ำตาม "${keyName}" สำเร็จ ${removed} แถว`, 'success');
+    }
+
+    // ==========================================================
+    // 7. SAFE EXPORT SYSTEM (PDPA COMPLIANT)
+    // ==========================================================
+    function openExportModal(format = 'xlsx') {
+      if (!rows.length) { showToast('ไม่มีข้อมูลสำหรับส่งออก', 'warn'); return; }
+
+      openModal(`📤 ส่งออกไฟล์ ${format.toUpperCase()} (PDPA Safe Export)`, `
+    <div style="font-size:12px;color:var(--text-muted);margin-bottom:14px;">
+      เลือกรูปแบบการปกป้องข้อมูลส่วนบุคคลตามมาตรฐาน PDPA ก่อนส่งออกไฟล์ไปใช้งานภายนอก
+    </div>
+
+    <div class="card-box" style="border-left:4px solid var(--accent);">
+      <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;">
+        <input type="radio" name="export-mode" value="masked" checked style="margin-top:3px;">
+        <div>
+          <strong style="color:var(--accent);">🛡️ Masked / De-identified Export (แนะนำ)</strong>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">
+            แทนที่ข้อมูล PII (ชื่อ-สกุล, เลขบัตร, เบอร์โทร) ด้วยเครื่องหมาย *** ป้องกันข้อมูลรั่วไหล 100%
+          </div>
+        </div>
+      </label>
+    </div>
+
+    <div class="card-box" style="border-left:4px solid var(--teal);">
+      <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;">
+        <input type="radio" name="export-mode" value="anon" style="margin-top:3px;">
+        <div>
+          <strong style="color:var(--teal);">🔒 Anonymized Research Export (สถิติ/วิจัย)</strong>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">
+            แปลงรหัส HN เป็น Pseudonym Token (เช่น ANON_8F3A), ลบชื่อ-สกุลจริง เหมาะสำหรับนักวิจัย
+          </div>
+        </div>
+      </label>
+    </div>
+
+    <div class="card-box" style="border-left:4px solid var(--danger);">
+      <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;">
+        <input type="radio" name="export-mode" value="raw" style="margin-top:3px;">
+        <div>
+          <strong style="color:var(--danger);">⚠️ Raw Data Export (ข้อมูลเต็ม ไม่เซ็นเซอร์)</strong>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">
+            สำหรับแพทย์หรือบุคลากรที่ได้รับมอบหมายตามสิทธิ์ PDPA เท่านั้น (มีการบันทึก Audit Log)
+          </div>
+        </div>
+      </label>
+    </div>
+
+    <div style="margin-top:10px;">
+      <label style="display:flex;align-items:center;gap:8px;font-size:12px;">
+        <input type="checkbox" id="export-add-audit" checked>
+        แนบแท็บประวัติการกระทำ (_Audit_Log) ในไฟล์ Excel ด้วย
+      </label>
+    </div>
+  `, [
+        {
+          label: `ส่งออกไฟล์ .${format}`,
+          cls: 'btn-primary',
+          fn: () => {
+            const mode = document.querySelector('input[name="export-mode"]:checked')?.value || 'masked';
+            const includeAudit = document.getElementById('export-add-audit')?.checked || false;
+            closeModal();
+            performExport(format, mode, includeAudit);
+          }
+        },
+        { label: 'ยกเลิก', cls: 'btn-secondary', fn: closeModal }
+      ]);
+    }
+
+    function performExport(format, mode, includeAudit) {
+      showLoading('กำลังจัดเตรียมไฟล์ส่งออก...');
+
+      setTimeout(() => {
+        let exportRows = [];
+
+        if (mode === 'masked') {
+          exportRows = rows.map(r => r.map((c, ci) => {
+            if (pdpaColumns.includes(ci) && c) {
+              const str = String(c).trim();
+              const rawNum = str.replace(/[- \s]/g, '');
+              if (/^\d{13}$/.test(rawNum)) return `${rawNum.slice(0, 1)}-${rawNum.slice(1, 5)}-*****--${rawNum.slice(12)}`;
+              if (/^0[689]\d{8}$/.test(rawNum)) return `${rawNum.slice(0, 3)}-***-${rawNum.slice(6)}`;
+              return str.length <= 2 ? '***' : str[0] + '***' + str[str.length - 1];
+            }
+            return c;
+          }));
+        } else if (mode === 'anon') {
+          exportRows = rows.map(r => r.map((c, ci) => {
+            if (pdpaColumns.includes(ci) && c) {
+              const hName = (headers[ci] || '').toLowerCase();
+              if (hName.includes('hn') || hName.includes('id')) return hashAnonymize(c);
+              return '[ANONYMIZED]';
+            }
+            return c;
+          }));
+        } else {
+          // Raw
+          exportRows = rows;
+        }
+
+        addAuditLog(`Export ${format.toUpperCase()}`, `โหมด: ${mode}, แถว: ${exportRows.length}`);
+
+        const baseName = (fileName.replace(/\.[^.]+$/, '') || 'hospital_data') + `_${mode}`;
+
+        if (format === 'xlsx') {
+          const wb = XLSX.utils.book_new();
+          const wsData = [headers, ...exportRows];
+          const ws = XLSX.utils.aoa_to_sheet(wsData);
+          XLSX.utils.book_append_sheet(wb, ws, sheets[activeSheetIdx].name);
+
+          if (includeAudit && auditLogs.length) {
+            const auditData = [['Timestamp', 'Action', 'Details'], ...auditLogs.map(l => [l.time, l.action, l.details])];
+            const wsAudit = XLSX.utils.aoa_to_sheet(auditData);
+            XLSX.utils.book_append_sheet(wb, wsAudit, '_Audit_Log');
+          }
+
+          XLSX.writeFile(wb, `${baseName}.xlsx`);
+        } else {
+          // CSV
+          const esc = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
+          const csv = [headers.map(esc).join(','), ...exportRows.map(r => r.map(esc).join(','))].join('\n');
+          const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = `${baseName}.csv`;
+          a.click();
+        }
+
+        hideLoading();
+        showToast(`ส่งออกไฟล์ ${format.toUpperCase()} (${mode}) เรียบร้อยแล้ว`, 'success');
+      }, 200);
+    }
+
+    // Backward-compat triggers
+    function exportExcel() { openExportModal('xlsx'); }
+    function exportCSV() { openExportModal('csv'); }
+
+    // ==========================================================
+    // 8. DATA QUALITY & PROFILING DASHBOARD
+    // ==========================================================
+    function openDashboard() {
+      document.getElementById('dashboard-panel').classList.add('open');
+      renderDashboard();
+    }
+
+    function closeDashboard() {
+      document.getElementById('dashboard-panel').classList.remove('open');
+    }
+
+    function renderDashboard() {
+      const container = document.getElementById('dashboard-content');
+      if (!container) return;
+
+      if (!rows.length) {
+        container.innerHTML = '<div style="text-align:center;padding:50px;color:var(--text-muted);">ไม่มีข้อมูลสำหรับสร้าง Dashboard<br>กรุณาเปิดไฟล์หรือโหลดข้อมูลตัวอย่าง</div>';
+        return;
+      }
+
+      const stats = calcCleanStats();
+      const completeness = 100 - stats.blankPct;
+      const colOpts = headers.map((h, i) => `<option value="${i}">${h || `Col${i + 1}`} ${pdpaColumns.includes(i) ? '🔒' : ''}</option>`).join('');
+
+      container.innerHTML = `
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-value" style="color:var(--success);">${completeness}%</div>
+        <div class="stat-label">Data Quality Score</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">${rows.length.toLocaleString()}</div>
+        <div class="stat-label">Total Rows</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">${headers.length}</div>
+        <div class="stat-label">Columns</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" style="color:var(--danger);">${pdpaColumns.length}</div>
+        <div class="stat-label">PII Protected</div>
+      </div>
+    </div>
+
+    <div class="card-box">
+      <div class="form-label">🔍 เลือกคอลัมน์เพื่อดูการกระจายตัว (Column Profiling):</div>
+      <select id="dash-col-select" class="form-select" onchange="updateDashboardChart(+this.value)">
+        ${colOpts}
+      </select>
+      <div id="dash-col-summary" style="margin-top:8px;font-size:11px;color:var(--text-muted);"></div>
+      <div style="margin-top:12px;min-height:180px;">
+        <canvas id="dash-chart"></canvas>
+      </div>
+    </div>
+
+    <div style="margin-top:14px;">
+      <div class="form-label">📊 ข้อมูลสรุปรายคอลัมน์ (Data Health by Column):</div>
+      <div style="max-height:220px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius-sm);">
+        <table style="width:100%;border-collapse:collapse;font-size:11px;text-align:left;">
+          <thead style="background:var(--surface-secondary);position:sticky;top:0;">
+            <tr>
+              <th style="padding:6px 8px;">Column</th>
+              <th style="padding:6px 8px;">Fill Rate</th>
+              <th style="padding:6px 8px;">Blank</th>
+              <th style="padding:6px 8px;">Sample</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${headers.map((h, ci) => {
+        let blankCount = 0;
+        let sampleVal = '';
+        for (let ri = 0; ri < rows.length; ri++) {
+          const v = rows[ri][ci];
+          if (v === '' || v === null || v === undefined) blankCount++;
+          else if (!sampleVal) sampleVal = String(v);
+        }
+        const fillPct = Math.round(((rows.length - blankCount) / rows.length) * 100);
+        return `
+                <tr style="border-bottom:1px solid var(--border);">
+                  <td style="padding:5px 8px;font-weight:600;">
+                    ${h || `Col${ci + 1}`} ${pdpaColumns.includes(ci) ? '<span title="PDPA">🔒</span>' : ''}
+                  </td>
+                  <td style="padding:5px 8px;">
+                    <div style="display:flex;align-items:center;gap:6px;">
+                      <div style="flex:1;background:var(--border);height:6px;border-radius:3px;overflow:hidden;min-width:40px;">
+                        <div style="width:${fillPct}%;background:${fillPct > 80 ? 'var(--success)' : fillPct > 50 ? 'var(--warn)' : 'var(--danger)'};height:100%;"></div>
+                      </div>
+                      <span>${fillPct}%</span>
+                    </div>
+                  </td>
+                  <td style="padding:5px 8px;color:var(--text-muted);">${blankCount.toLocaleString()}</td>
+                  <td style="padding:5px 8px;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-muted);">${sampleVal || '-'}</td>
+                </tr>
+              `;
+      }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+
+      // Render chart for the first column or first non-empty
+      if (headers.length) updateDashboardChart(0);
+    }
+
+    function updateDashboardChart(colIdx) {
+      const canvas = document.getElementById('dash-chart');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+
+      if (dashChartInstance) {
+        dashChartInstance.destroy();
+        dashChartInstance = null;
+      }
+
+      // Count frequencies
+      const freqMap = new Map();
+      let numValues = [];
+      rows.forEach(r => {
+        const val = r[colIdx];
+        if (val !== '' && val !== null && val !== undefined) {
+          const str = String(val).trim();
+          freqMap.set(str, (freqMap.get(str) || 0) + 1);
+          if (!isNaN(val) && val !== '') numValues.push(+val);
+        }
+      });
+
+      const summaryDiv = document.getElementById('dash-col-summary');
+      const isNumeric = numValues.length > (rows.length * 0.5);
+
+      if (isNumeric) {
+        const sum = numValues.reduce((a, b) => a + b, 0);
+        const avg = (sum / numValues.length).toFixed(1);
+        const min = Math.min(...numValues);
+        const max = Math.max(...numValues);
+        summaryDiv.innerHTML = `ตัวเลข | Min: <b>${min}</b>, Max: <b>${max}</b>, เฉลี่ย: <b>${avg}</b> (N=${numValues.length})`;
+      } else {
+        summaryDiv.innerHTML = `ข้อความ/กลุ่ม | หมวดหมู่ที่ไม่ซ้ำ: <b>${freqMap.size.toLocaleString()}</b> รายการ`;
+      }
+
+      // Top 7 items
+      const sorted = [...freqMap.entries()].sort((a, b) => b[1] - a[1]).slice(0, 7);
+      const labels = sorted.map(s => {
+        let lbl = s[0];
+        if (pdpaEnabled && pdpaColumns.includes(colIdx)) lbl = maskPIIValue(lbl, colIdx);
+        return lbl.length > 15 ? lbl.slice(0, 14) + '…' : lbl;
+      });
+      const data = sorted.map(s => s[1]);
+
+      dashChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels.length ? labels : ['(ไม่มีข้อมูล)'],
+          datasets: [{
+            label: 'จำนวนเรคคอร์ด',
+            data: data.length ? data : [0],
+            backgroundColor: '#4f46e5',
+            borderRadius: 4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { beginAtZero: true, ticks: { precision: 0 } },
+            x: { ticks: { font: { size: 10 } } }
+          }
+        }
+      });
+    }
+
+    // ==========================================================
+    // 9. LOCAL DATA STORAGE & RECOVERY (INDEXEDDB)
+    // ==========================================================
+    function initIndexedDB() {
+      const req = indexedDB.open('HospitalCleansingDB', 1);
+      req.onupgradeneeded = e => {
+        const idb = e.target.result;
+        if (!idb.objectStoreNames.contains('sessions')) {
+          idb.createObjectStore('sessions', { keyPath: 'id' });
+        }
+      };
+      req.onsuccess = e => {
+        db = e.target.result;
+        checkDraftRecovery();
+      };
+    }
+
+    function scheduleAutoSave() {
+      const statusSpan = document.getElementById('autosave-status');
+      if (statusSpan) statusSpan.textContent = 'Saving...';
+      clearTimeout(autoSaveTimer);
+      autoSaveTimer = setTimeout(saveDraftToDB, 1500);
+    }
+
+    function saveDraftToDB() {
+      if (!db || !sheets.length) return;
+      syncToActiveSheet();
+      const tx = db.transaction('sessions', 'readwrite');
+      const store = tx.objectStore('sessions');
+      const draft = {
+        id: 'active_draft',
+        sheets,
+        activeSheetIdx,
+        auditLogs,
+        updatedAt: new Date().toISOString()
+      };
+      store.put(draft);
+      tx.oncomplete = () => {
+        const statusSpan = document.getElementById('autosave-status');
+        if (statusSpan) statusSpan.textContent = 'Draft synced (Local)';
+      };
+    }
+
+    function checkDraftRecovery() {
+      if (!db) return;
+      const tx = db.transaction('sessions', 'readonly');
+      const store = tx.objectStore('sessions');
+      const req = store.get('active_draft');
+      req.onsuccess = () => {
+        const draft = req.result;
+        if (draft && draft.sheets && draft.sheets.some(s => s.rows && s.rows.length)) {
+          const banner = document.getElementById('recovery-banner');
+          const timeStr = new Date(draft.updatedAt).toLocaleString('th-TH');
+          document.getElementById('recovery-msg').textContent = `💾 พบข้อมูลร่างค้างไว้ในเครื่อง (${timeStr}) กู้คืนข้อมูลหรือไม่?`;
+          if (banner) banner.style.display = 'flex';
+        }
+      };
+    }
+
+    function restoreDraft() {
+      if (!db) return;
+      const tx = db.transaction('sessions', 'readonly');
+      const store = tx.objectStore('sessions');
+      const req = store.get('active_draft');
+      req.onsuccess = () => {
+        const draft = req.result;
+        if (draft && draft.sheets) {
+          sheets = draft.sheets;
+          activeSheetIdx = draft.activeSheetIdx || 0;
+          auditLogs = draft.auditLogs || [];
+          syncFromActiveSheet();
+          renderSheetTabs();
+          renderTable();
+          updateStatus();
+          dismissRecoveryBanner();
+          addAuditLog('Restore Draft', 'กู้คืนข้อมูลร่างล่าสุดจาก IndexedDB');
+          showToast('กู้คืนข้อมูลร่างสำเร็จแล้ว', 'success');
+        }
+      };
+    }
+
+    function dismissRecoveryBanner() {
+      const banner = document.getElementById('recovery-banner');
+      if (banner) banner.style.display = 'none';
+    }
+
+    function clearDraft() {
+      if (confirm('คุณต้องการลบแบบร่างที่บันทึกค้างไว้ในเครื่องใช่หรือไม่?')) {
+        if (db) {
+          const tx = db.transaction('sessions', 'readwrite');
+          tx.objectStore('sessions').delete('active_draft');
+        }
+        dismissRecoveryBanner();
+        showToast('ลบแบบร่างในเครื่องเรียบร้อยแล้ว', 'info');
+      }
+    }
+
+    // ==========================================================
+    // 10. FILE INPUT, OCR, SAMPLES, EDITING
+    // ==========================================================
+    function handleFileInput(input) {
+      const file = input.files[0];
+      if (!file) return;
+      fileName = file.name;
+      showLoading('กำลังโหลดและประมวลผลไฟล์...');
+
+      const reader = new FileReader();
+      reader.onload = e => {
+        try {
+          const wb = XLSX.read(e.target.result, { type: 'binary' });
+          const newSheets = [];
+          wb.SheetNames.forEach(sheetName => {
+            const ws = wb.Sheets[sheetName];
+            const data = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+            if (data?.length) {
+              const sheet = createSheet(sheetName);
+              sheet.headers = data[0].map((h, i) => h !== '' ? String(h).trim() : `Column${i + 1}`);
+              sheet.rows = data.slice(1).filter(r => r.some(c => c !== ''));
+              sheet.fileName = fileName;
+              newSheets.push(sheet);
+            }
+          });
+
+          if (newSheets.length) {
+            pushUndo();
+            sheets = newSheets;
+            activeSheetIdx = 0;
+            syncFromActiveSheet();
+            pdpaColumns = detectPDPAColumns();
+            renderSheetTabs();
+            renderTable();
+            updateStatus();
+            scheduleAutoSave();
+            addAuditLog('Open File', `เปิดไฟล์ "${fileName}" จำนวน ${rows.length} แถว`);
+            showToast(`เปิดไฟล์สำเร็จ: ${sheets.length} ชีท, ${rows.length} แถว`, 'success');
+          }
+        } catch (err) {
+          showToast('เกิดข้อผิดพลาดในการโหลดไฟล์', 'error');
+        }
+        hideLoading();
+        input.value = '';
+      };
+      reader.readAsBinaryString(file);
+    }
+
+    function openFileDialog() { document.getElementById('file-input').click(); }
+
+    function loadSampleData() {
+      pushUndo();
+      const sampleHeaders = ['HN', 'CID (เลขบัตร)', 'Name (ชื่อ-สกุล)', 'Age', 'Gender', 'Dept', 'Tel', 'Income', 'Visit_Date'];
+      const sampleRows = [];
+      const names = [
+        'นาย สมชาย ใจดี', 'นางสาว สมศรี มีสุข', 'นาง วรรณา สว่างวงศ์', 'นาย ประเสริฐ รัตนชัย',
+        'นาย สุชาติ สุขภาพดี', 'นาง อำไพ แก้วงาม', 'ด.ช. กิตติกร ภักดี', 'พญ. นภาพร มงคล'
+      ];
+      const depts = ['Cardiology (หัวใจ)', 'Neurology (ประสาท)', 'Pediatrics (กุมาร)', 'OPD ทั่วไป', 'Orthopedics'];
+      const dates = ['2567-01-15', '2567-02-20', '2024-03-10', '15/04/2567', '2567-05-01'];
+
+      for (let i = 1; i <= 60; i++) {
+        const rawCid = `1100400${String(100000 + i).slice(0, 6)}`;
+        const phone = `081${String(1000000 + i * 23).slice(0, 7)}`;
+        sampleRows.push([
+          `HN${String(i).padStart(5, '0')}`,
+          rawCid,
+          names[i % names.length],
+          20 + Math.floor(Math.random() * 55),
+          Math.random() > 0.5 ? 'M' : 'F',
+          depts[i % depts.length],
+          phone,
+          Math.floor(Math.random() * 80000) + 15000,
+          dates[i % dates.length]
+        ]);
+      }
+
+      // Add a few dirty/threshold rows for testing
+      sampleRows.push(['', '', '', '', '', '', '', '', '']); // empty
+      sampleRows.push(['HN99999', '', '', '', '', '', '', '', '']); // <30%
+
+      sheets = [createSheet('OPD_Patients')];
+      activeSheetIdx = 0;
+      headers = sampleHeaders;
+      rows = sampleRows;
+      fileName = 'sample_hospital_data.xlsx';
+      pdpaColumns = detectPDPAColumns();
+      pdpaEnabled = true;
+
+      renderSheetTabs();
+      renderTable();
+      updateStatus();
+      scheduleAutoSave();
+      addAuditLog('Load Sample Data', `โหลดข้อมูลตัวอย่างโรงพยาบาล 62 แถว`);
+      showToast(`โหลดข้อมูลตัวอย่าง รพ. สำเร็จ (${rows.length} แถว, ตรวจพบ ${pdpaColumns.length} PII)`, 'success');
+    }
+
+    function openOCRModal() {
+      const overlay = document.createElement('div');
+      overlay.className = 'modal-overlay';
+      overlay.innerHTML = `
+    <div class="modal">
+      <div class="modal-head"><span>🖼️ OCR Document → Table</span><button class="modal-close" onclick="this.closest('.modal-overlay').remove()">✕</button></div>
+      <div class="modal-body">
+        <div class="drop-zone" id="ocr-dz"><div>📸 คลิกเพื่อเลือกไฟล์รูปภาพเอกสาร (Thai + Eng OCR)</div></div>
+        <textarea id="ocr-text" class="form-textarea" style="min-height:140px;display:none;margin-top:10px;"></textarea>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" onclick="ocrToTable()">แปลงเป็นตาราง (Convert to Table)</button>
+        <button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove()">ยกเลิก</button>
+      </div>
+    </div>
+  `;
+      document.body.appendChild(overlay);
+
+      const dz = overlay.querySelector('#ocr-dz');
+      const imgInput = document.getElementById('img-input');
+      dz.onclick = () => imgInput.click();
+      imgInput.onchange = () => {
+        if (imgInput.files[0]) processImageOCR(imgInput.files[0], overlay);
+        imgInput.value = '';
+      };
+    }
+
+    async function processImageOCR(file, overlay) {
+      showLoading('กำลังอ่านข้อความ OCR ภาษาไทยและอังกฤษ...');
+      const reader = new FileReader();
+      reader.onload = async e => {
+        try {
+          const result = await Tesseract.recognize(e.target.result, 'tha+eng');
+          overlay.querySelector('#ocr-text').value = result.data.text;
+          overlay.querySelector('#ocr-text').style.display = 'block';
+          showToast('อ่านข้อความ OCR สำเร็จ', 'success');
+        } catch (err) {
+          showToast('OCR ล้มเหลว', 'error');
+        }
+        hideLoading();
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function ocrToTable() {
+      const textarea = document.querySelector('#ocr-text');
+      if (!textarea?.value.trim()) { showToast('ไม่พบข้อความ', 'warn'); return; }
+      const lines = textarea.value.split('\n').filter(l => l.trim());
+      const data = lines.map(l => l.split(/\s{2,}|\t/).map(c => c.trim()));
+      loadData(data);
+      document.querySelector('.modal-overlay')?.remove();
+    }
+
+    function loadData(data) {
+      if (!data?.length) return;
+      pushUndo();
+      headers = data[0].map((h, i) => h !== '' ? String(h).trim() : `Column${i + 1}`);
+      rows = data.slice(1).filter(r => r.some(c => c !== ''));
+      pdpaColumns = detectPDPAColumns();
+      renderTable();
+      updateStatus();
+      scheduleAutoSave();
+      addAuditLog('Import Data', `นำเข้าข้อมูล ${rows.length} แถว`);
+      showToast(`โหลดข้อมูลสำเร็จ: ${rows.length} แถว`, 'success');
+    }
+
+    function openPasteModal() {
+      openModal('📋 วางข้อมูลจาก Clipboard (Paste Data)', `
+    <textarea id="paste-text" style="min-height:150px;" class="form-textarea" placeholder="วางข้อมูลที่คัดลอกมาจาก Excel หรือ CSV..."></textarea>
+    <div style="margin-top:10px;">
+      <div class="form-label">ตัวคั่น (Delimiter):</div>
+      <select id="paste-delim" class="form-select">
+        <option value="\\t">แท็บ (Tab - ค่าเริ่มต้นจาก Excel)</option>
+        <option value=",">เครื่องหมายจุลภาค (Comma)</option>
+      </select>
+    </div>
+  `, [
+        {
+          label: 'โหลดข้อมูลเข้าสู่ตาราง',
+          cls: 'btn-primary',
+          fn: () => {
+            let text = document.getElementById('paste-text').value;
+            let delim = document.getElementById('paste-delim').value;
+            if (delim === '\\t') delim = '\t';
+            if (!text.trim()) { showToast('ไม่มีข้อมูล', 'warn'); return; }
+            const data = text.trim().split('\n').map(l => l.split(delim));
+            loadData(data);
+            closeModal();
+          }
+        },
+        { label: 'ยกเลิก', cls: 'btn-secondary', fn: closeModal }
+      ]);
+    }
+
+    function openFindModal() {
+      openModal('🔍 ค้นหาและแทนที่ (Find & Replace)', `
+    <div class="form-label">คำที่ต้องการค้นหา:</div>
+    <input id="find-text" class="form-input" placeholder="Find term..." style="margin-bottom:10px;">
+    <div class="form-label">คำที่ต้องการแทนที่:</div>
+    <input id="replace-text" class="form-input" placeholder="Replace with...">
+  `, [
+        {
+          label: 'แทนที่ทั้งหมด (Replace All)',
+          cls: 'btn-primary',
+          fn: () => {
+            const find = document.getElementById('find-text').value;
+            const replace = document.getElementById('replace-text').value;
+            if (!find) { showToast('ระบุคำที่ต้องการค้นหา', 'warn'); return; }
+            pushUndo();
+            let count = 0;
+            rows.forEach(row => {
+              row.forEach((val, ci) => {
+                if (val && typeof val === 'string' && val.includes(find)) {
+                  row[ci] = val.replace(new RegExp(find.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), replace);
+                  count++;
+                }
+              });
+            });
+            renderTable();
+            closeModal();
+            scheduleAutoSave();
+            addAuditLog('Find & Replace', `ค้นหา "${find}" แทนที่ด้วย "${replace}" (${count} เซลล์)`);
+            showToast(`แทนที่ข้อมูลเรียบร้อย ${count} เซลล์`, 'success');
+          }
+        },
+        { label: 'ยกเลิก', cls: 'btn-secondary', fn: closeModal }
+      ]);
+    }
+
+    function addNewRow() {
+      pushUndo();
+      rows.push(new Array(headers.length).fill(''));
+      renderTable();
+      scheduleAutoSave();
+      showToast('เพิ่มแถวใหม่แล้ว', 'success');
+    }
+
+    function addNewColumn() {
+      const colName = prompt('ชื่อคอลัมน์ใหม่:', `Column${headers.length + 1}`);
+      if (!colName) return;
+      pushUndo();
+      headers.push(colName);
+      rows.forEach(r => r.push(''));
+      renderTable();
+      scheduleAutoSave();
+      showToast(`เพิ่มคอลัมน์ "${colName}" แล้ว`, 'success');
+    }
+
+    function openSetHeaderModal() {
+      if (!rows.length) { showToast('ไม่มีข้อมูล', 'warn'); return; }
+      openModal('⬆️ กำหนดแถวหัวตาราง (Set Header Row)', `
+    <div class="form-label">หมายเลขแถวที่ต้องการใช้เป็น Header:</div>
+    <input type="number" id="header-row-select" class="form-input" value="1" min="1" max="${rows.length}">
+    <label style="display:flex;align-items:center;gap:8px;margin-top:12px;font-size:12px;">
+      <input type="checkbox" id="header-remove-row" checked> ลบแถวนี้ออกจากตารางข้อมูลหลังนำมาเป็น Header
+    </label>
+  `, [
+        {
+          label: 'ยืนยัน',
+          cls: 'btn-primary',
+          fn: () => {
+            const rowNum = +document.getElementById('header-row-select').value;
+            const removeRow = document.getElementById('header-remove-row').checked;
+            if (isNaN(rowNum) || rowNum < 1 || rowNum > rows.length) return;
+            const rowIdx = rowNum - 1;
+            const newHeaders = rows[rowIdx].map((c, i) => String(c ?? '').trim() || (headers[i] || `Col${i + 1}`));
+            pushUndo();
+            if (removeRow) rows.splice(rowIdx, 1);
+            headers = newHeaders;
+            pdpaColumns = detectPDPAColumns();
+            renderTable();
+            closeModal();
+            scheduleAutoSave();
+            addAuditLog('Set Header Row', `ใช้แถวที่ ${rowNum} เป็น Header`);
+            showToast(`ตั้งค่าแถวที่ ${rowNum} เป็นหัวตารางสำเร็จ`, 'success');
+          }
+        },
+        { label: 'ยกเลิก', cls: 'btn-secondary', fn: closeModal }
+      ]);
+    }
+
+    // ==========================================================
+    // 11. UNDO SYSTEM & UTILS
+    // ==========================================================
+    function pushUndo() {
+      syncToActiveSheet();
+      undoStack.push({ sheets: JSON.parse(JSON.stringify(sheets)), activeSheetIdx });
+      if (undoStack.length > 15) undoStack.shift();
+    }
+
+    function doUndo() {
+      if (!undoStack.length) { showToast('ไม่มีรายการที่สามารถย้อนกลับได้', 'warn'); return; }
+      const snap = undoStack.pop();
+      sheets = snap.sheets;
+      activeSheetIdx = snap.activeSheetIdx;
+      syncFromActiveSheet();
+      renderSheetTabs();
+      renderTable();
+      updateStatus();
+      scheduleAutoSave();
+      showToast('ย้อนกลับการกระทำสำเร็จ (Undo)', 'success');
+    }
+
+    let currentModal = null;
+    function openModal(title, bodyHTML, buttons = []) {
+      closeModal();
+      const overlay = document.createElement('div');
+      overlay.className = 'modal-overlay';
+      overlay.innerHTML = `
+    <div class="modal">
+      <div class="modal-head"><span>${title}</span><button class="modal-close" onclick="closeModal()">✕</button></div>
+      <div class="modal-body">${bodyHTML}</div>
+      <div class="modal-footer">${buttons.map((b, i) => `<button class="btn ${b.cls}" data-btn="${i}">${b.label}</button>`).join('')}</div>
+    </div>
+  `;
+      document.body.appendChild(overlay);
+      buttons.forEach((b, i) => overlay.querySelector(`[data-btn="${i}"]`).addEventListener('click', b.fn));
+      currentModal = overlay;
+    }
+
+    function closeModal() {
+      if (currentModal) { currentModal.remove(); currentModal = null; }
+    }
+
+    function showToast(msg, type = 'info') {
+      const t = document.createElement('div');
+      t.className = `toast ${type}`;
+      t.innerHTML = msg;
+      document.getElementById('toast-container').appendChild(t);
+      setTimeout(() => {
+        t.style.opacity = '0';
+        setTimeout(() => t.remove(), 300);
+      }, 3200);
+    }
+
+    function showLoading(text = 'กำลังประมวลผล...') {
+      document.getElementById('loading-text').textContent = text;
+      document.getElementById('loading-overlay').classList.add('show');
+    }
+
+    function hideLoading() {
+      document.getElementById('loading-overlay').classList.remove('show');
+    }
+
+    function toggleDarkMode() {
+      document.body.classList.toggle('dark');
+      localStorage.setItem('dark', document.body.classList.contains('dark') ? '1' : '0');
+    }
+
+    function initVirtualScroll() {
+      const wrap = document.getElementById('tbl-body-wrap');
+      wrap.addEventListener('scroll', () => {
+        updateVirtualScroll();
+        document.getElementById('tbl-head-wrap').scrollLeft = wrap.scrollLeft;
+      });
+    }
+
+    // Shortcuts
+    window.addEventListener('keydown', e => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+        e.preventDefault();
+        doUndo();
+      }
+    });
+
+    function init() {
+      renderHeader();
+      initVirtualScroll();
+      renderSheetTabs();
+      if (localStorage.getItem('dark') === '1') document.body.classList.add('dark');
+      renderVisibleRows();
+      initIndexedDB();
+    }
+
+    init();
+  </script>
+</body>
+
+</html>
