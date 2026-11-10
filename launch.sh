@@ -23,3 +23,4 @@ elif command -v xdg-open &> /dev/null; then
 else
     cmd.exe /c start "" "$HTML_FILE" 2>/dev/null || open "$HTML_FILE" 2>/dev/null
 fi
+
